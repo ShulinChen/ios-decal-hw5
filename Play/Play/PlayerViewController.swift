@@ -24,6 +24,8 @@ class PlayerViewController: UIViewController {
     var artistLabel: UILabel!
     var titleLabel: UILabel!
     
+    var firstTime: Bool = true;
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view = UIView(frame: UIScreen.mainScreen().bounds)
@@ -125,12 +127,29 @@ class PlayerViewController: UIViewController {
      *  property accordingly.
      */
     func playOrPauseTrack(sender: UIButton) {
-        let path = NSBundle.mainBundle().pathForResource("Info", ofType: "plist")
-        let clientID = NSDictionary(contentsOfFile: path!)?.valueForKey("client_id") as! String
-        let track = tracks[currentIndex]
-        let url = NSURL(string: "https://api.soundcloud.com/tracks/\(track.id)/stream?client_id=\(clientID)")!
-        // FILL ME IN
-    
+        if firstTime {
+            let path = NSBundle.mainBundle().pathForResource("Info", ofType: "plist")
+            let clientID = NSDictionary(contentsOfFile: path!)?.valueForKey("client_id") as! String
+            let track = tracks[currentIndex]
+            let url = NSURL(string: "https://api.soundcloud.com/tracks/\(track.id)/stream?client_id=\(clientID)")!
+            // FILL ME IN
+            print("hit play button")
+            print(url)
+            let song = AVPlayerItem(URL: url)
+            self.player = AVPlayer(playerItem: song)
+            firstTime = false;
+        }
+        //sender.selcted starts with false.
+        if sender.selected {
+//            print("!")
+            self.player.pause()
+            sender.setImage(UIImage(named: "play.png"), forState: UIControlState.Normal)
+        } else {
+//            print("??")
+            self.player.play()
+            sender.setImage(UIImage(named: "pause.png"), forState: UIControlState.Normal)
+        }
+        sender.selected = !sender.selected
     }
     
     /* 
@@ -140,7 +159,23 @@ class PlayerViewController: UIViewController {
      * Remember to update the currentIndex
      */
     func nextTrackTapped(sender: UIButton) {
-    
+        
+        let path = NSBundle.mainBundle().pathForResource("Info", ofType: "plist")
+        let clientID = NSDictionary(contentsOfFile: path!)?.valueForKey("client_id") as! String
+       
+        //toFix: check if there is a next track
+        
+        if currentIndex + 1 <= tracks.count {
+            let track = tracks[currentIndex + 1]
+            let url = NSURL(string: "https://api.soundcloud.com/tracks/\(track.id)/stream?client_id=\(clientID)")!
+//            print("hit next button")
+//            print(url)
+            let song = AVPlayerItem(URL: url)
+            self.player = AVPlayer(playerItem: song)
+            self.player.play()
+        }
+        self.currentIndex = self.currentIndex + 1
+        loadTrackElements()
     }
 
     /*
@@ -154,7 +189,28 @@ class PlayerViewController: UIViewController {
      */
 
     func previousTrackTapped(sender: UIButton) {
-    
+
+        let t1 = Float(self.player.currentTime().value)
+        let t2 = Float(self.player.currentTime().timescale)
+        let currentSeconds : Float = t1 / t2
+        if currentSeconds > 3 {
+            print(currentSeconds)
+            let beginning : CMTime = CMTimeMake(0, self.player.currentTime().timescale)
+            self.player.seekToTime(beginning)
+        } else {
+            print(currentSeconds, "more")
+            if currentIndex - 1 >= 0 {
+                let path = NSBundle.mainBundle().pathForResource("Info", ofType: "plist")
+                let clientID = NSDictionary(contentsOfFile: path!)?.valueForKey("client_id") as! String
+                let track = tracks[currentIndex - 1]
+                let url = NSURL(string: "https://api.soundcloud.com/tracks/\(track.id)/stream?client_id=\(clientID)")!
+                let song = AVPlayerItem(URL: url)
+                self.player = AVPlayer(playerItem: song)
+                self.player.play()
+                self.currentIndex = self.currentIndex - 1
+                loadTrackElements()
+            }
+        }
     }
     
     
